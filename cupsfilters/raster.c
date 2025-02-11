@@ -318,6 +318,8 @@ cfRasterPrepareHeader(cups_page_header_t *h,   // I  - Raster header
         yres = xres;
     }
   }
+  
+  if(log) log(ld, CF_LOGLEVEL_DEBUG, "DEBUG: Entered cfRasterPrepareHeader.");
 
   if (log)
   {
@@ -338,16 +340,22 @@ cfRasterPrepareHeader(cups_page_header_t *h,   // I  - Raster header
     *h = *(data->header); // Copy sample header
   else
     raster_base_header(h, data, 1 - cupsrasterheader);
-  memset(dimensions, 0, sizeof(dimensions));
+  memset(dimensions, 0, sizeof(dimensions)); 
   for (i = 0; i < 4; i ++)
     margins[i] = -1.0;
+  log(ld,CF_LOGLEVEL_DEBUG,"Page Dimensions before cfGetPageDimensions(): Width=%.2f, Length=%.2f\n",dimensions[0],dimensions[1]);
   i = cfGetPageDimensions(data->printer_attrs, data->job_attrs,
 			  data->num_options, data->options, h, 0,
 			  &(dimensions[0]), &(dimensions[1]),
 			  &(margins[0]), &(margins[1]),
 			  &(margins[2]), &(margins[3]), size_name_buf,
 			  NULL);
-
+  // fprintf(stderr,"the return value of cfGetPageDimensions: %d\n",i);
+  log(ld,CF_LOGLEVEL_DEBUG,"\nBack to raster.c, the return value of cfGetPageDimensions: %d",i);
+  log(ld,CF_LOGLEVEL_DEBUG,"Page Dimensions got from cfGetPageDimensions: Width=%.2f, Length=%.2f",dimensions[0],dimensions[1]);
+  log(ld,CF_LOGLEVEL_DEBUG,"Margins: Left=%.2f, Bottom=%.2f, Right=%.2f, Top=%.2f", 
+        margins[0],margins[1],margins[2],margins[3]);
+        
   if (i < 0)
   {
     pwg_media_t *pwg_media;
@@ -374,7 +382,7 @@ cfRasterPrepareHeader(cups_page_header_t *h,   // I  - Raster header
   else if (size_name_buf[0])
     _strlcpy(h->cupsPageSizeName, size_name_buf, sizeof(h->cupsPageSizeName));
 
-  log(ld, CF_LOGLEVEL_DEBUG, "Format of the input document: %s", data->content_type);
+  log(ld, CF_LOGLEVEL_DEBUG, "The data->content_type is: %s",data->content_type);
   if (data->content_type == NULL ||
       (strcmp(data->content_type, "application/postscript") &&
        strcmp(data->content_type, "application/vnd.cups-postscript") &&
@@ -388,13 +396,12 @@ cfRasterPrepareHeader(cups_page_header_t *h,   // I  - Raster header
     // input pages in absolute dimensions, so if no output page size
     // is defined, fall back to US Letter
     log(ld, CF_LOGLEVEL_DEBUG,
-	"Document's input format does not provide absolute size dimensions for each page, falling back to US Letter if no output page size is provided.");
+	  "Document's input format does not provide absolute size dimensions for each page, falling back to US Letter if no output page size is provided.");
     cfSetPageDimensionsToDefault(&(dimensions[0]), &(dimensions[1]),
 				 &(margins[0]), &(margins[1]),
 				 &(margins[2]), &(margins[3]),
 				 log, ld);
-  }
-  else
+  }else
   {
     log(ld, CF_LOGLEVEL_DEBUG,
 	"Document's input format provides absolute size dimensions for each page, using these if no output page size is provided.");

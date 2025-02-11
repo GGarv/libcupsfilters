@@ -665,6 +665,11 @@ cfFilterTextToPDF(int inputfd,  	// I - File descriptor input stream
     close(outputfd);
   }
 
+  // fprintf(stdout, "Debug: Initial Margins - Left: %.2f, Right: %.2f, Bottom: %.2f, Top: %.2f\n",
+  //       doc.PageLeft, doc.PageRight, doc.PageBottom, doc.PageTop);
+  log(ld,CF_LOGLEVEL_DEBUG,"Intial Margins: Left=%.2f, Bottom=%.2f, Right=%.2f, Top=%.2f\n", 
+        doc.PageLeft, doc.PageBottom, doc.PageRight, doc.PageTop);
+
   cfRasterPrepareHeader(&(doc.h), data, CF_FILTER_OUT_FORMAT_CUPS_RASTER,
 			CF_FILTER_OUT_FORMAT_CUPS_RASTER, 0, &cspace);
   doc.Orientation = doc.h.Orientation;
@@ -684,11 +689,13 @@ cfFilterTextToPDF(int inputfd,  	// I - File descriptor input stream
     (float)doc.h.ImagingBoundingBox[3];
   doc.Copies = doc.h.NumCopies;
 
+  log(ld,CF_LOGLEVEL_DEBUG,"\nEntered into textopdf.c again.");
   // Check whether we do borderless printing with overspray and let text only
   // get printed on the actual media size
   if (doc.h.cupsPageSizeName[0] != '\0')
   {
-    // The page size name in te header corresponds to the actual size of
+    log(ld,CF_LOGLEVEL_DEBUG,"We are Doing Boderless printing");
+    // The page size name in the header corresponds to the actual size of
     // the media, so find the size dimensions
     pwg_media_t *size_found = NULL;
     strncpy(keyword, doc.h.cupsPageSizeName, sizeof(keyword) - 1);
@@ -744,6 +751,9 @@ cfFilterTextToPDF(int inputfd,  	// I - File descriptor input stream
     doc.PageWidth = 612.0f;	// Total page width
     doc.PageLength = 792.0f;	// Total page length
   }
+  log(ld,CF_LOGLEVEL_DEBUG,"After Page Dimensions: Width=%.2f, Length=%.2f", doc.PageWidth, doc.PageLength);
+  log(ld,CF_LOGLEVEL_DEBUG,"After Margins: Left=%.2f, Bottom=%.2f, Right=%.2f, Top=%.2f\n", 
+        doc.PageLeft, doc.PageBottom, doc.PageRight, doc.PageTop);
 
   //
   // Layout the page according to the requested orientation by the

@@ -1413,6 +1413,18 @@ pwg_copy_size(cf_size_t *size)	// I - Media size to copy
   return (newsize);
 }
 
+void print_ipp_attributes(const char *title, ipp_t *attrs) {
+  ipp_attribute_t *attr;
+  fprintf(stderr, "\nDEBUG: ---- %s ----\n", title);
+  if (!attrs) {
+      fprintf(stderr, "DEBUG: No attributes found!\n");
+      return;
+  }
+  for (attr = ippFirstAttribute(attrs); attr; attr = ippNextAttribute(attrs)) {
+      fprintf(stderr, "DEBUG: Attribute: %s\n", ippGetName(attr));
+  }
+  fprintf(stderr, "DEBUG: ---- END %s ----\n\n", title);
+}
 
 int					// O -  1: Requested page size supported
                                         //      2: Requested page size supported
@@ -1455,8 +1467,11 @@ cfGetPageDimensions(ipp_t *printer_attrs,   // I - Printer attributes
     "Dmedia-col-default",
     "Dmedia-default",
   };
-
-
+  fprintf(stderr,"Entered into ipp.c\n");
+  print_ipp_attributes("JOB ATTRIBUTES", job_attrs);
+  for (int i = 0; i < num_options; i++) {
+        fprintf(stderr, "DEBUG: Option: %s = %s\n", options[i].name, options[i].value);
+  }
   if (name == NULL)
     name = size_name_buf;
   name[0] = '\0';
@@ -1489,6 +1504,7 @@ cfGetPageDimensions(ipp_t *printer_attrs,   // I - Printer attributes
                 ipp_top = -1;
 
     attr_name = media_size_attr_names[i];
+    fprintf(stderr, "DEBUG: attr_name = %s\n", attr_name);
     if (*attr_name == 'J' ||
 	(transverse_fit && *attr_name == 'j')) // Job attribute/option
     {
@@ -1496,6 +1512,7 @@ cfGetPageDimensions(ipp_t *printer_attrs,   // I - Printer attributes
       {
 	if (header)
 	{
+    fprintf(stderr,"Checking raster header because of J attribute with no suffix\n");
 	  // Raster header
 	  if (header->cupsPageSize[0] > 0.0)
 	    ipp_width = (int)(header->cupsPageSize[0] * 2540.0 / 72.0);
@@ -1538,6 +1555,7 @@ cfGetPageDimensions(ipp_t *printer_attrs,   // I - Printer attributes
 					IPP_TAG_ZERO)) != NULL)
       {
 	// String from IPP attribute
+  fprintf(stderr,"value is assigned by job_attributes: job_attrs");
 	ippAttributeString(attr, valstr, sizeof(valstr));
 	value = valstr;
       }
@@ -1568,6 +1586,7 @@ cfGetPageDimensions(ipp_t *printer_attrs,   // I - Printer attributes
 
     if (value)
     {
+      fprintf(stderr, "DEBUG: getting value from command-line arguments options = %s\n", value);
       if (*value == '{')
       {
 	//
@@ -1621,6 +1640,10 @@ cfGetPageDimensions(ipp_t *printer_attrs,   // I - Printer attributes
 				   num_media_col, media_col))
 	    != NULL)
 	  ipp_top = atoi(value);
+
+    fprintf(stderr, "Dimensions parsed during cupsGetOption() in ipp.c: Width=%f, Height=%f\n", ipp_width,ipp_height);
+    fprintf(stderr, "Margins parsed during cupsGetOption() in ipp.c : Left=%f, Bottom=%f, Right=%f, Top=%f\n",
+    ipp_left,ipp_bottom, ipp_right, ipp_top );
       }
       else
       {
@@ -1675,6 +1698,7 @@ cfGetPageDimensions(ipp_t *printer_attrs,   // I - Printer attributes
     // Get name from media
     if (name_ptr)
     {
+      fprintf(stderr, "DEBUG: we do not extract individual width & height values yet, but name_ptr now holds media options = %s\n", name_ptr);
       if (ipp_left == 0 && ipp_bottom == 0 &&
 	  ipp_right == 0 && ipp_top == 0)
 	snprintf(name, IPP_MAX_NAME, "%.29s.Borderless", name_ptr);
@@ -1708,12 +1732,18 @@ cfGetPageDimensions(ipp_t *printer_attrs,   // I - Printer attributes
     // If we have a size, we use the size as search term (name = "" then),
     // if we have no size but a name, use the name, always pass in margins
     // if available
+    fprintf(stderr, "DEBUG: before cfGenerateSizes is called: Width=%d, Height=%d\n", ipp_width, ipp_height);
+    fprintf(stderr, "DEBUG: before cfGenerateSizes is called - Margins Left=%d Bottom=%d Right=%d Top=%d\n",
+        ipp_left, ipp_bottom, ipp_right, ipp_top);
+    fprintf(stderr, "DEBUG: cfGenerateSizes returned size_name = %s\n\n", name);
     cfGenerateSizes(printer_attrs, CF_GEN_SIZES_SEARCH, NULL, NULL,
 		    &ipp_width, &ipp_height,
 		    &ipp_left, &ipp_bottom, &ipp_right, &ipp_top,
 		    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, name,
 		    media_col_entry);
-
+    fprintf(stderr, "\nDEBUG: After cfGenerateSizes: Width=%d, Height=%d\n", ipp_width, ipp_height);
+    fprintf(stderr, "DEBUG: After cfGenerateSizes: Margins Left=%d Bottom=%d Right=%d Top=%d\n",
+        ipp_left, ipp_bottom, ipp_right, ipp_top);
     // Return resulting numbers
     if (ipp_width > 0 && ipp_height > 0 &&
 	ipp_left >= 0 && ipp_bottom >= 0 &&
@@ -1724,14 +1754,46 @@ cfGetPageDimensions(ipp_t *printer_attrs,   // I - Printer attributes
       if (height)
 	*height = ipp_height * 72.0 / 2540.0;
 
-      if (left)
-	*left = ipp_left * 72.0 / 2540.0;
-      if (bottom)
-	*bottom = ipp_bottom * 72.0 / 2540.0;
-      if (right)
-	*right = ipp_right * 72.0 / 2540.0;
-      if (top)
-	*top = ipp_top * 72.0 / 2540.0;
+  // Function to check if a string is a valid number
+  int is_valid_number(const char *str) {
+      if (str == NULL || *str == '\0') return 0; // Empty or NULL is invalid
+      char *endptr;
+      strtod(str, &endptr);
+      return (*endptr == '\0'); // Valid if endptr points to the end of the string
+  }
+  
+  if (left) {
+      if ((value = cupsGetOption("page-left", num_options, options)) != NULL && is_valid_number(value))
+          *left = atof(value);
+      else
+          *left = ipp_left * 72.0 / 2540.0;
+  }
+
+  if (right) {
+      if ((value = cupsGetOption("page-right", num_options, options)) != NULL && is_valid_number(value))
+          *right = atof(value);
+      else
+          *right = ipp_right * 72.0 / 2540.0;
+  }
+
+  if (top) {
+      if ((value = cupsGetOption("page-top", num_options, options)) != NULL && is_valid_number(value))
+          *top = atof(value);
+      else
+          *top = ipp_top * 72.0 / 2540.0;
+  }
+
+  if (bottom) {
+      if ((value = cupsGetOption("page-bottom", num_options, options)) != NULL && is_valid_number(value))
+          *bottom = atof(value);
+      else
+          *bottom = ipp_bottom * 72.0 / 2540.0;
+  }
+
+
+ fprintf(stderr, "Final Parsed Dimensions: Width=%f, Height=%f\n", *width, *height);
+ fprintf(stderr, "Final Parsed Margins: Left=%f, Bottom=%f, Right=%f, Top=%f\n",
+    *left, *bottom, *right, *top);
 
       return (*attr_name == 'J' ? 1 :
 	      (*attr_name == 'j' ? 2 :
@@ -1754,6 +1816,7 @@ cfSetPageDimensionsToDefault(float *width,  // IO - Width (in pt, 1/72 inches)
 			     cf_logfunc_t log, // I - Log function
 			     void  *ld)     // I  - Log function data
 {
+  fprintf(stderr,"cfSetPageDimensionsToDefault is called.\n");
   if (width && height && (*width <= 0.0 || *height <= 0.0))
   {
     if (log) log(ld, CF_LOGLEVEL_WARN,
@@ -1882,6 +1945,9 @@ cfGenerateSizes(ipp_t *response,
   // same for them, so we use the same code. "media-col-database" is parsed
   // first as it is more complete an accurate, "media-col-ready" is more
   // a fallback if there is no "media-col-database".
+
+  fprintf(stderr,"cfGenerateSizes is being called.\n");
+
   const char * const col_attrs[] =
   {
     "media-col-database",
@@ -1899,6 +1965,7 @@ cfGenerateSizes(ipp_t *response,
   // return zero borders instead of the originally given ones, and
   // with the ".Transverse" variant we swap width and length
   // dimensions.
+  print_ipp_attributes("PRINTER ATTRIBUTES(response) passed in cfGenerateSizes()", response);
   if (!response)
   {
     int borderless = 0;
@@ -1928,9 +1995,10 @@ cfGenerateSizes(ipp_t *response,
       if (top && *top < 0)
 	*top = 1270;
     }
+    fprintf(stderr,"DEBUG: cfGenerateSizes() returns the default value because response is null\n");
     return;
   }
-
+  fprintf(stderr,"DEBUG: The code runs further in cfGenerateSizes() after setting margins to default.\n");
   if (media_col_entry)
     *media_col_entry = NULL;
 
