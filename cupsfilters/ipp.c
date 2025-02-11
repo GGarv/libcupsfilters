@@ -1724,14 +1724,41 @@ cfGetPageDimensions(ipp_t *printer_attrs,   // I - Printer attributes
       if (height)
 	*height = ipp_height * 72.0 / 2540.0;
 
-      if (left)
-	*left = ipp_left * 72.0 / 2540.0;
-      if (bottom)
-	*bottom = ipp_bottom * 72.0 / 2540.0;
-      if (right)
-	*right = ipp_right * 72.0 / 2540.0;
-      if (top)
-	*top = ipp_top * 72.0 / 2540.0;
+  // Function to check if a string is a valid number
+  int is_valid_number(const char *str) {
+      if (str == NULL || *str == '\0') return 0; // Empty or NULL is invalid
+      char *endptr;
+      strtod(str, &endptr);
+      return (*endptr == '\0'); // Valid if endptr points to the end of the string
+  }
+  // If margins are provided via command-line, assign them priority otherwise, use existing values
+  if (left) {
+      if ((value = cupsGetOption("page-left", num_options, options)) != NULL && is_valid_number(value))
+          *left = atof(value);
+      else
+          *left = ipp_left * 72.0 / 2540.0;
+  }
+
+  if (right) {
+      if ((value = cupsGetOption("page-right", num_options, options)) != NULL && is_valid_number(value))
+          *right = atof(value);
+      else
+          *right = ipp_right * 72.0 / 2540.0;
+  }
+
+  if (top) {
+      if ((value = cupsGetOption("page-top", num_options, options)) != NULL && is_valid_number(value))
+          *top = atof(value);
+      else
+          *top = ipp_top * 72.0 / 2540.0;
+  }
+
+  if (bottom) {
+      if ((value = cupsGetOption("page-bottom", num_options, options)) != NULL && is_valid_number(value))
+          *bottom = atof(value);
+      else
+          *bottom = ipp_bottom * 72.0 / 2540.0;
+  }
 
       return (*attr_name == 'J' ? 1 :
 	      (*attr_name == 'j' ? 2 :
