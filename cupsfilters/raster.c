@@ -352,10 +352,6 @@ cfRasterPrepareHeader(cups_page_header_t *h,   // I  - Raster header
 			  NULL);
   // fprintf(stderr,"the return value of cfGetPageDimensions: %d\n",i);
   log(ld,CF_LOGLEVEL_DEBUG,"\nBack to raster.c, the return value of cfGetPageDimensions: %d",i);
-  log(ld,CF_LOGLEVEL_DEBUG,"Page Dimensions got from cfGetPageDimensions: Width=%.2f, Length=%.2f",dimensions[0],dimensions[1]);
-  log(ld,CF_LOGLEVEL_DEBUG,"Margins: Left=%.2f, Bottom=%.2f, Right=%.2f, Top=%.2f", 
-        margins[0],margins[1],margins[2],margins[3]);
-        
   if (i < 0)
   {
     pwg_media_t *pwg_media;

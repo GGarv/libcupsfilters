@@ -674,6 +674,12 @@ cfFilterTextToPDF(int inputfd,  	// I - File descriptor input stream
 
   cfRasterPrepareHeader(&(doc.h), data, CF_FILTER_OUT_FORMAT_CUPS_RASTER,
 			CF_FILTER_OUT_FORMAT_CUPS_RASTER, 0, &cspace);
+
+  log(ld,CF_LOGLEVEL_DEBUG,"\nEntered into textopdf.c again.");
+  log(ld,CF_LOGLEVEL_DEBUG,"After Page Dimensions: Width=%.2f, Length=%.2f", doc.PageWidth, doc.PageLength);
+  log(ld,CF_LOGLEVEL_DEBUG,"After Margins: Left=%.2f, Bottom=%.2f, Right=%.2f, Top=%.2f\n", 
+        doc.PageLeft, doc.PageBottom, doc.PageRight, doc.PageTop);
+
   doc.Orientation = doc.h.Orientation;
   doc.Duplex = doc.h.Duplex;
   doc.ColorDevice = doc.h.cupsNumColors <= 1 ? 0 : 1;
@@ -691,7 +697,9 @@ cfFilterTextToPDF(int inputfd,  	// I - File descriptor input stream
     (float)doc.h.ImagingBoundingBox[3];
   doc.Copies = doc.h.NumCopies;
 
-  log(ld,CF_LOGLEVEL_DEBUG,"\nEntered into textopdf.c again.");
+  log(ld,CF_LOGLEVEL_DEBUG,"Page Dimensions after doc.h assigned: Width=%.2f, Length=%.2f", doc.PageWidth, doc.PageLength);
+  log(ld,CF_LOGLEVEL_DEBUG,"Margins: Left=%.2f, Bottom=%.2f, Right=%.2f, Top=%.2f\n", 
+        doc.PageLeft, doc.PageBottom, doc.PageRight, doc.PageTop);
   // Check whether we do borderless printing with overspray and let text only
   // get printed on the actual media size
   if (doc.h.cupsPageSizeName[0] != '\0')
@@ -753,8 +761,8 @@ cfFilterTextToPDF(int inputfd,  	// I - File descriptor input stream
     doc.PageWidth = 612.0f;	// Total page width
     doc.PageLength = 792.0f;	// Total page length
   }
-  log(ld,CF_LOGLEVEL_DEBUG,"After Page Dimensions: Width=%.2f, Length=%.2f", doc.PageWidth, doc.PageLength);
-  log(ld,CF_LOGLEVEL_DEBUG,"After Margins: Left=%.2f, Bottom=%.2f, Right=%.2f, Top=%.2f\n", 
+  log(ld,CF_LOGLEVEL_DEBUG,"Final Page Dimensions: Width=%.2f, Length=%.2f", doc.PageWidth, doc.PageLength);
+  log(ld,CF_LOGLEVEL_DEBUG,"Final Margins: Left=%.2f, Bottom=%.2f, Right=%.2f, Top=%.2f\n", 
         doc.PageLeft, doc.PageBottom, doc.PageRight, doc.PageTop);
 
   //

@@ -896,7 +896,11 @@ cfFilterPDFToPDF(int inputfd,            // I - File descriptor input stream
     num_options = cfJoinJobOptionsAndAttrs(data, num_options, &options);
 
     getParameters(data, num_options, options, param, &doc);
-
+    if (log) {
+      log(ld, CF_LOGLEVEL_DEBUG,
+          "PDF Margins after getParameters: Left=%.2f, Bottom=%.2f, Right=%.2f, Top=%.2f",
+          param.page.left, param.page.bottom, param.page.right, param.page.top);
+  }
     calculate(num_options, options, param, final_content_type);
 
 #ifdef DEBUG
@@ -957,7 +961,15 @@ cfFilterPDFToPDF(int inputfd,            // I - File descriptor input stream
 	fclose(inputfp);
 	return (2);
       }
-
+    // Debug: Print final PDF dimensions and margins after processing
+    if (log) {
+        log(ld, CF_LOGLEVEL_DEBUG,
+            "Final PDF Dimensions: Width=%.2fpt, Height=%.2fpt",
+            param.page.width, param.page.height);
+        log(ld, CF_LOGLEVEL_DEBUG,
+            "Final PDF Margins: Left=%.2fpt, Bottom=%.2fpt, Right=%.2fpt, Top=%.2fpt",
+            param.page.left, param.page.bottom, param.page.right, param.page.top);
+    }
       // Pass information to subsequent filters via PDF comments
       std::vector<std::string> output;
 

@@ -1426,6 +1426,42 @@ void print_ipp_attributes(const char *title, ipp_t *attrs) {
   fprintf(stderr, "DEBUG: ---- END %s ----\n\n", title);
 }
 
+static void 
+SetCommonOptions(int num_options,     // I - Number of options
+              cups_option_t *options, // I - Options
+              float *left,    // IO - Left margin (in pt, 1/72 inches)
+              float *bottom,  // IO - Bottom margin
+              float *right,   // IO - Right margin
+              float *top)     // IO - Top margin
+{
+  const char *val;
+
+  // Parse page-left
+  if ((val = cupsGetOption("page-left", num_options, options)) != NULL) 
+  {
+    *left = atof(val); // Convert to float (already in points)
+  }
+
+  // Parse page-bottom
+  if ((val = cupsGetOption("page-bottom", num_options, options)) != NULL) 
+  {
+    *bottom = atof(val); // Convert to float (already in points)
+  }
+
+  // Parse page-right
+  if ((val = cupsGetOption("page-right", num_options, options)) != NULL) 
+  {
+    *right = atof(val); // Convert to float (already in points)
+  }
+
+  // Parse page-top
+  if ((val = cupsGetOption("page-top", num_options, options)) != NULL) 
+  {
+    *top = atof(val); // Convert to float (already in points)
+  }
+}
+
+
 int					// O -  1: Requested page size supported
                                         //      2: Requested page size supported
                                         //	   when rotated by 90 degrees
@@ -1722,8 +1758,7 @@ cfGetPageDimensions(ipp_t *printer_attrs,   // I - Printer attributes
       ipp_bottom = swap;	
     }
     
-    cupsFreeOptions(num_media_col, media_col);
-
+  cupsFreeOptions(num_media_col, media_col);
     // We have a valid request for a page size
     if (*attr_name == 'J' || *attr_name == 'j')
       size_requested = 1;
@@ -1744,52 +1779,34 @@ cfGetPageDimensions(ipp_t *printer_attrs,   // I - Printer attributes
     fprintf(stderr, "\nDEBUG: After cfGenerateSizes: Width=%d, Height=%d\n", ipp_width, ipp_height);
     fprintf(stderr, "DEBUG: After cfGenerateSizes: Margins Left=%d Bottom=%d Right=%d Top=%d\n",
         ipp_left, ipp_bottom, ipp_right, ipp_top);
-    // Return resulting numbers
-    if (ipp_width > 0 && ipp_height > 0 &&
-	ipp_left >= 0 && ipp_bottom >= 0 &&
-	ipp_right >= 0 && ipp_top >= 0)
-    {
-      if (width)
-	*width = ipp_width * 72.0 / 2540.0;
-      if (height)
-	*height = ipp_height * 72.0 / 2540.0;
+  // Return resulting numbers
+  if (ipp_width > 0 && ipp_height > 0 &&
+      ipp_left >= 0 && ipp_bottom >= 0 &&
+      ipp_right >= 0 && ipp_top >= 0)
+  {
+  // Convert IPP margins to points
+  float left_margin = ipp_left * 72.0 / 2540.0;
+  float bottom_margin = ipp_bottom * 72.0 / 2540.0;
+  float right_margin = ipp_right * 72.0 / 2540.0;
+  float top_margin = ipp_top * 72.0 / 2540.0;
 
-  // Function to check if a string is a valid number
-  int is_valid_number(const char *str) {
-      if (str == NULL || *str == '\0') return 0; // Empty or NULL is invalid
-      char *endptr;
-      strtod(str, &endptr);
-      return (*endptr == '\0'); // Valid if endptr points to the end of the string
-  }
-  
-  if (left) {
-      if ((value = cupsGetOption("page-left", num_options, options)) != NULL && is_valid_number(value))
-          *left = atof(value);
-      else
-          *left = ipp_left * 72.0 / 2540.0;
-  }
+  // margins with command-line options
+  SetCommonOptions(num_options, options, &left_margin, &bottom_margin, &right_margin, &top_margin);
 
-  if (right) {
-      if ((value = cupsGetOption("page-right", num_options, options)) != NULL && is_valid_number(value))
-          *right = atof(value);
-      else
-          *right = ipp_right * 72.0 / 2540.0;
-  }
+  // Assign final margins
+  if (width)
+    *width = ipp_width * 72.0 / 2540.0;
+  if (height)
+    *height = ipp_height * 72.0 / 2540.0;
 
-  if (top) {
-      if ((value = cupsGetOption("page-top", num_options, options)) != NULL && is_valid_number(value))
-          *top = atof(value);
-      else
-          *top = ipp_top * 72.0 / 2540.0;
-  }
-
-  if (bottom) {
-      if ((value = cupsGetOption("page-bottom", num_options, options)) != NULL && is_valid_number(value))
-          *bottom = atof(value);
-      else
-          *bottom = ipp_bottom * 72.0 / 2540.0;
-  }
-
+  if (left)
+    *left = left_margin;
+  if (bottom)
+    *bottom = bottom_margin;
+  if (right)
+    *right = right_margin;
+  if (top)
+    *top = top_margin;
 
  fprintf(stderr, "Final Parsed Dimensions: Width=%f, Height=%f\n", *width, *height);
  fprintf(stderr, "Final Parsed Margins: Left=%f, Bottom=%f, Right=%f, Top=%f\n",
