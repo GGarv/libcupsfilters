@@ -1413,6 +1413,40 @@ pwg_copy_size(cf_size_t *size)	// I - Media size to copy
   return (newsize);
 }
 
+static void 
+SetCommonOptions(int num_options,     // I - Number of options
+              cups_option_t *options, // I - Options
+              float *left,    // IO - Left margin (in pt, 1/72 inches)
+              float *bottom,  // IO - Bottom margin
+              float *right,   // IO - Right margin
+              float *top)     // IO - Top margin
+{
+  const char *val;
+
+  // Parse page-left
+  if ((val = cupsGetOption("page-left", num_options, options)) != NULL) 
+  {
+    *left = atof(val); // Convert to float (already in points)
+  }
+
+  // Parse page-bottom
+  if ((val = cupsGetOption("page-bottom", num_options, options)) != NULL) 
+  {
+    *bottom = atof(val);
+  }
+
+  // Parse page-right
+  if ((val = cupsGetOption("page-right", num_options, options)) != NULL) 
+  {
+    *right = atof(val);
+  }
+
+  // Parse page-top
+  if ((val = cupsGetOption("page-top", num_options, options)) != NULL) 
+  {
+    *top = atof(val);
+  }
+}
 
 int					// O -  1: Requested page size supported
                                         //      2: Requested page size supported
@@ -1719,19 +1753,29 @@ cfGetPageDimensions(ipp_t *printer_attrs,   // I - Printer attributes
 	ipp_left >= 0 && ipp_bottom >= 0 &&
 	ipp_right >= 0 && ipp_top >= 0)
     {
-      if (width)
-	*width = ipp_width * 72.0 / 2540.0;
-      if (height)
-	*height = ipp_height * 72.0 / 2540.0;
+  // Convert IPP margins to points
+  float left_margin = ipp_left * 72.0 / 2540.0;
+  float bottom_margin = ipp_bottom * 72.0 / 2540.0;
+  float right_margin = ipp_right * 72.0 / 2540.0;
+  float top_margin = ipp_top * 72.0 / 2540.0;
 
-      if (left)
-	*left = ipp_left * 72.0 / 2540.0;
-      if (bottom)
-	*bottom = ipp_bottom * 72.0 / 2540.0;
-      if (right)
-	*right = ipp_right * 72.0 / 2540.0;
-      if (top)
-	*top = ipp_top * 72.0 / 2540.0;
+  // margins support for command-line options
+  SetCommonOptions(num_options, options, &left_margin, &bottom_margin, &right_margin, &top_margin);
+
+  // Assign final margins
+  if (width)
+    *width = ipp_width * 72.0 / 2540.0;
+  if (height)
+    *height = ipp_height * 72.0 / 2540.0;
+
+  if (left)
+    *left = left_margin;
+  if (bottom)
+    *bottom = bottom_margin;
+  if (right)
+    *right = right_margin;
+  if (top)
+    *top = top_margin;
 
       return (*attr_name == 'J' ? 1 :
 	      (*attr_name == 'j' ? 2 :
