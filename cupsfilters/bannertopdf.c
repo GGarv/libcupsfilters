@@ -632,7 +632,13 @@ generate_banner_pdf(banner_t *banner,
 				 &(media_limits[0]), &(media_limits[1]),
 				 &(media_limits[2]), &(media_limits[3]),
 				 log, ld);
-
+    
+    cfSetUserMargins(num_options, options,
+      page_width, page_length,
+      &(media_limits[0]), &(media_limits[1]),
+      &(media_limits[2]), &(media_limits[3]),
+      log, ld);
+      
     media_limits[2] = page_width - media_limits[2];
     media_limits[3] = page_length - media_limits[3];
   }

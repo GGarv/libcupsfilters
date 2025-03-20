@@ -398,7 +398,13 @@ cfRasterPrepareHeader(cups_page_header_t *h,   // I  - Raster header
   {
     log(ld, CF_LOGLEVEL_DEBUG,
 	"Document's input format provides absolute size dimensions for each page, using these if no output page size is provided.");
-  }
+  } 
+
+  cfSetUserMargins(data->num_options, data->options,
+    dimensions[0], dimensions[1],
+    &(margins[0]), &(margins[1]),
+		&(margins[2]), &(margins[3]),
+    log, ld);
 
   if (!cupsrasterheader)
     memset(margins, 0, sizeof(margins)); 

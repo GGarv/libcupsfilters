@@ -1743,6 +1743,70 @@ cfGetPageDimensions(ipp_t *printer_attrs,   // I - Printer attributes
   return (size_requested ? -1 : 0);
 }
 
+void 
+cfSetUserMargins(int num_options,       // I - Number of options
+            cups_option_t *options,     // I - Options 
+            float  width,      // I - Current page width (in pt, 1/72 inches)
+            float  height,     // I - Current page height
+            float *left,       // IO - Left margin 
+            float *bottom,     // IO - Bottom margin 
+            float *right,      // IO - Right margin 
+            float *top,        // IO - Top margin 
+            cf_logfunc_t log,  // I - Log function
+            void  *ld)         // I - Log function data
+{
+  const char *val;
+  float       margin;
+
+  if ((val = cupsGetOption("page-left", num_options, options)) != NULL)
+  {
+    margin = (float)atof(val);
+    if (margin < 0.0f || margin >= width)
+    {
+      if (log) log(ld, CF_LOGLEVEL_ERROR,
+      "cfSetUserMargins: Invalid value for page-left margin %.2f (range: [0, %.2f)), ignoring.", margin, width);
+    }
+    else
+      *left = margin;
+  }
+
+  if ((val = cupsGetOption("page-bottom", num_options, options)) != NULL)
+  {
+    margin = (float)atof(val);
+    if (margin < 0.0f || margin >= height)
+    {
+      if (log) log(ld, CF_LOGLEVEL_ERROR,
+        "cfSetUserMargins: Invalid value for page-bottom margin %.2f (range: [0, %.2f)), ignoring.", margin, height);
+    }
+    else
+      *bottom = margin;
+  }
+
+  if ((val = cupsGetOption("page-right", num_options, options)) != NULL)
+  {
+    margin = (float)atof(val);
+    if (margin < 0.0f || margin >= width)
+    {
+      if (log) log(ld, CF_LOGLEVEL_ERROR,
+        "cfSetUserMargins: Invalid value for page-right margin %.2f (range: [0, %.2f)), ignoring.", margin, width);
+      }
+    else
+      *right = margin;
+  }
+
+  if ((val = cupsGetOption("page-top", num_options, options)) != NULL)
+  {
+    margin = (float)atof(val);
+    if (margin < 0.0f || margin >= height)
+    {
+      if (log) log(ld, CF_LOGLEVEL_ERROR,
+        "cfSetUserMargins: Invalid value for page-top margin %.2f (range: [0, %.2f)), ignoring.", margin, height);
+    }
+    else
+      *top = margin;
+  }
+}
+
 
 void
 cfSetPageDimensionsToDefault(float *width,  // IO - Width (in pt, 1/72 inches)
