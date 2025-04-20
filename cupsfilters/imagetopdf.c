@@ -765,6 +765,10 @@ cfFilterImageToPDF(int inputfd,         // I - File descriptor input stream
 		    NULL, NULL, NULL, NULL, NULL, NULL,
 		    &min_width, &min_length, &max_width, &max_length,
 		    &left, &bottom, &right, &top, defSize, NULL);
+    min_width = min_width * 72.0 / 2540.0;
+    min_length = min_length * 72.0 / 2540.0;
+    max_width = max_width * 72.0 / 2540.0;
+    max_length = max_length * 72.0 / 2540.0;
     customLeft = left * 72.0 / 2540.0;
     customBottom = bottom * 72.0 / 2540.0;
     customRight = right * 72.0 / 2540.0;
@@ -1380,13 +1384,13 @@ cfFilterImageToPDF(int inputfd,         // I - File descriptor input stream
 
   strcpy(defSize, h.cupsPageSizeName);
 
-  if ((strncasecmp(defSize, "Custom", 6)) == 0 ||
+  if (printer_attrs != NULL && (strncasecmp(defSize, "Custom", 6)) == 0 ||
       strcasestr(defSize, "_custom_"))
   {
     float	width,		// New width in points
 		length;		// New length in points
-
-
+    float left, bottom, right, top; // final page margins
+	  
     //
     // Use the correct width and length for the current orientation...
     //
@@ -1406,8 +1410,13 @@ cfFilterImageToPDF(int inputfd,         // I - File descriptor input stream
     // Add margins to page size...
     //
 
-    width += customLeft + customRight;
-    length += customTop + customBottom;
+    left = (cupsGetOption("page-left", num_options, options) != NULL)? doc.PageLeft : customLeft;
+    bottom = (cupsGetOption("page-bottom", num_options, options) != NULL)? doc.PageBottom : customBottom;
+    right = (cupsGetOption("page-right", num_options, options) != NULL)? doc.PageRight : customRight;
+    top = (cupsGetOption("page-top", num_options, options) != NULL)? doc.PageTop : customTop;
+
+    width += left + right;
+    length += top + bottom
 
     //
     // Enforce minimums...
@@ -1440,10 +1449,10 @@ cfFilterImageToPDF(int inputfd,         // I - File descriptor input stream
 
     doc.PageWidth  = width;
     doc.PageLength = length;
-    doc.PageLeft = customLeft;
-    doc.PageRight = width - customRight;
-    doc.PageBottom = customBottom;
-    doc.PageTop = length - customTop;
+    doc.PageLeft = left;
+    doc.PageRight = width - right;
+    doc.PageBottom = bottom;
+    doc.PageTop = length - top;
   }
 
   if (doc.Copies == 1)
