@@ -1416,7 +1416,7 @@ cfFilterImageToPDF(int inputfd,         // I - File descriptor input stream
     top = (cupsGetOption("page-top", num_options, options) != NULL)? doc.PageTop : customTop;
 
     width += left + right;
-    length += top + bottom
+    length += top + bottom;
 
     //
     // Enforce minimums...
